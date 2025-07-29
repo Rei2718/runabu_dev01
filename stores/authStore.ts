@@ -64,3 +64,5 @@ export const useAuthStore = create<AuthState>((set) => ({
     };
   },
 }));
+
+// Note: The initialization logic is called once from the RootLayout component.
