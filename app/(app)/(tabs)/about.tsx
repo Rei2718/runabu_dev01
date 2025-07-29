@@ -1,13 +1,12 @@
-import { supabase } from '@/lib/supabase';
-import { Alert, Button, StyleSheet, Text, View } from 'react-native';
+import { useAuthStore } from '@/stores/authStore'; // supabaseの代わりにストアをインポート
+import { Button, StyleSheet, Text, View } from 'react-native';
 
 export default function AboutScreen() {
+  const { signOut } = useAuthStore();
+
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      Alert.alert('Error Signing Out', error.message);
-    }
-    console.log("signined out")
+    await signOut();
+    console.log("signed out");
   };
 
   return (

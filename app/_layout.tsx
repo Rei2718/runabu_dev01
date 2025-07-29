@@ -1,23 +1,37 @@
-import { supabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/stores/authStore';
+import { Slot, SplashScreen, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [session, setSession] = useState<Session | null>(null)
+  const { session, isInitialized } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-  }, [])
+    const cleanup = useAuthStore.getState().initialize();
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-        {session && session.user ? <Stack.Screen name="(app)" /> : <Stack.Screen name="(auth)" />}
-    </Stack>
-  )
+    return () => {
+      cleanup();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+    const inAuthGroup = segments[0] === '(auth)';
+    if (session && inAuthGroup) {
+      router.replace('/(app)/(tabs)');
+    } else if (!session && !inAuthGroup) {
+      router.replace('/(auth)');
+    }
+  }, [session, isInitialized, segments, router]);
+
+  if (!isInitialized) {
+    return null;
+  }
+  SplashScreen.hideAsync();
+  return <Slot />;
 }

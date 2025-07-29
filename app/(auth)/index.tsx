@@ -1,61 +1,33 @@
-import { supabase } from '@/lib/supabase'
-import { useState } from 'react'
-import { Alert, AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
-
-// Tells Supabase Auth to continuously refresh the session automatically if
-// the app is in the foreground. When this is added, you will continue to receive
-// `onAuthStateChange` events with the `TOKEN_REFRESHED` or `SIGNED_OUT` event
-// if the user's session is terminated. This should only be registered once.
-AppState.addEventListener('change', (state) => {
-  if (state === 'active') {
-    supabase.auth.startAutoRefresh()
-  } else {
-    supabase.auth.stopAutoRefresh()
-  }
-})
+import { useAuthStore } from '@/stores/authStore';
+import { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Auth() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signInWithEmail, signUpWithEmail, loading } = useAuthStore();
 
-  async function signInWithEmail() {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    })
+  const handleSignIn = async () => {
+    const { error } = await signInWithEmail({ email, password });
+    if (error) Alert.alert(error.message);
+  };
 
-    if (error) Alert.alert(error.message)
-    setLoading(false)
-  }
-
-  async function signUpWithEmail() {
-    setLoading(true)
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    })
-
-    if (error) Alert.alert(error.message)
-    if (!session) Alert.alert('Please check your inbox for email verification!')
-    setLoading(false)
-  }
+  const handleSignUp = async () => {
+    const { data, error } = await signUpWithEmail({ email, password });
+    if (error) Alert.alert(error.message);
+    if (!data.session) Alert.alert('Please check your inbox for email verification!');
+  };
 
   return (
     <View style={styles.container}>
-      {/* Email Input */}
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={setEmail}
           value={email}
           placeholder="email@address.com"
-          autoCapitalize={'none'}
+          autoCapitalize="none"
           keyboardType="email-address"
         />
       </View>
@@ -65,11 +37,11 @@ export default function Auth() {
         <Text style={styles.label}>Password</Text>
         <TextInput
           style={styles.input}
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={setPassword}
           value={password}
           secureTextEntry={true}
           placeholder="Password"
-          autoCapitalize={'none'}
+          autoCapitalize="none"
         />
       </View>
 
@@ -81,7 +53,7 @@ export default function Auth() {
             { opacity: pressed || loading ? 0.6 : 1 },
           ]}
           disabled={loading}
-          onPress={() => signInWithEmail()}
+          onPress={handleSignIn}
         >
           <Text style={styles.buttonText}>Sign in</Text>
         </Pressable>
@@ -95,13 +67,13 @@ export default function Auth() {
             { opacity: pressed || loading ? 0.6 : 1 },
           ]}
           disabled={loading}
-          onPress={() => signUpWithEmail()}
+          onPress={handleSignUp}
         >
           <Text style={styles.buttonText}>Sign up</Text>
         </Pressable>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -141,4 +113,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-})
+});
